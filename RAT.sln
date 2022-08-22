@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RATServer", "RATServer\RATServer.csproj", "{7947F928-CB88-4F32-84B3-1D19D3F79233}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RAT", "RAT\RAT.csproj", "{74AC7CB5-2C45-4A79-907F-E014331D76EC}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7947F928-CB88-4F32-84B3-1D19D3F79233}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7947F928-CB88-4F32-84B3-1D19D3F79233}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7947F928-CB88-4F32-84B3-1D19D3F79233}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7947F928-CB88-4F32-84B3-1D19D3F79233}.Release|Any CPU.Build.0 = Release|Any CPU
+		{74AC7CB5-2C45-4A79-907F-E014331D76EC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{74AC7CB5-2C45-4A79-907F-E014331D76EC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{74AC7CB5-2C45-4A79-907F-E014331D76EC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{74AC7CB5-2C45-4A79-907F-E014331D76EC}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
