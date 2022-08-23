@@ -89,11 +89,21 @@ public static class RatServerListener {
             // Get the response
             NetworkStream stream = new(socket);
             string data = ReceiveMessage(stream);
-            if (cmd == "ping" && data != "pong") {
-                Logger.Info("Socket disconnected: " + socket.RemoteEndPoint);
-                return;
+            switch (cmd) {
+                case "ping" when data != "pong":
+                    Logger.Info("Socket disconnected: " + socket.RemoteEndPoint);
+                    return;
+                case "latency": {
+                    DateTime sent = DateTime.FromBinary(long.Parse(data));
+                    DateTime received = DateTime.Now;
+                    TimeSpan latency = received - sent;
+                    Logger.Info("Latency of client: " + latency.TotalMilliseconds + "ms");
+                    break;
+                }
+                default:
+                    Logger.Info("Client response to " + cmd + ":\n" + data);
+                    break;
             }
-            Logger.Info("Client response to " + cmd + ": " + data);
         }
     }
     

