@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RAT", "RAT\RAT.csproj", "{7
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RATLauncher", "RATLauncher\RATLauncher.csproj", "{9612660D-9D92-4715-AE00-3ECC1FB6D8C8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RATKeepAlive", "RATKeepAlive\RATKeepAlive.csproj", "{9C9E784A-353D-4907-B433-E716237D22AB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{9612660D-9D92-4715-AE00-3ECC1FB6D8C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9612660D-9D92-4715-AE00-3ECC1FB6D8C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9612660D-9D92-4715-AE00-3ECC1FB6D8C8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9C9E784A-353D-4907-B433-E716237D22AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9C9E784A-353D-4907-B433-E716237D22AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9C9E784A-353D-4907-B433-E716237D22AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9C9E784A-353D-4907-B433-E716237D22AB}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

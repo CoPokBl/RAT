@@ -37,7 +37,8 @@ ProcessStartInfo start =
     new() {
         FileName = execName,
         WindowStyle = ProcessWindowStyle.Hidden, // Hides GUI
-        CreateNoWindow = true // Hides console
+        CreateNoWindow = true, // Hides console
+        Arguments = "resist"
     };
 
 try {
@@ -49,5 +50,5 @@ catch (Exception e) {
 
 Console.WriteLine("An error occured. Try again as administrator.");
 Console.Write("Press any key to exit.");
-Console.ReadKey(true);
+// Console.ReadKey(true);
 return 1;
